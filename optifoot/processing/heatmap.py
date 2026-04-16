@@ -25,8 +25,8 @@ def generate_heatmap(spo2_map: np.ndarray) -> np.ndarray:
     norm = np.zeros_like(spo2_map, dtype=np.uint8)
     foot_mask = spo2_map > 0
     if np.any(foot_mask):
-        # Map 0-100% → 0-255 (inverted: 100 %→255 blue, 0%→0 red)
-        norm[foot_mask] = (spo2_map[foot_mask] * 2.55).clip(0, 255).astype(np.uint8)
+        # Map 0-100% → 255-0 (inverted: 100 %→ 0 blue, 0%→ 255 red)
+        norm[foot_mask] = 255 - (spo2_map[foot_mask] * 2.55).clip(0, 255).astype(np.uint8)
 
     heatmap = cv2.applyColorMap(norm, cv2.COLORMAP_JET)
 

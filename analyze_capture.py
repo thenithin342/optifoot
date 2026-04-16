@@ -20,6 +20,7 @@ def analyze_pair(
     *,
     out_dir: Path | None = None,
     print_report: bool = True,
+    mock_mode: int | None = None,
 ) -> dict[str, Any]:
     """
     Run preprocessing → SpO₂ map → risk score → save analysis_heatmap.png under out_dir.
@@ -44,6 +45,17 @@ def analyze_pair(
     foot_pct = foot_pixels / total_pixels * 100.0
 
     spo2_map = calculate_spo2_map(p650p, p850p, mask)
+    
+    if mock_mode in (0, 1):
+        pair_num = int("".join(filter(str.isdigit, pair_id)) or "42")
+        rng = np.random.default_rng(pair_num)
+        foot_mask = (mask > 0)
+        n_pixels = np.count_nonzero(foot_mask)
+        if mock_mode == 1:
+            spo2_map[foot_mask] = rng.uniform(86.0, 96.0, size=n_pixels)
+        elif mock_mode == 0:
+            spo2_map[foot_mask] = rng.uniform(2.0, 8.0, size=n_pixels)
+
     foot_vals = spo2_map[spo2_map > 0]
     spo2_stats: dict[str, float] = {}
     if foot_vals.size > 0:
@@ -56,6 +68,22 @@ def analyze_pair(
 
     scorer = ThresholdScorer()
     result = scorer.score(spo2_map)
+    
+    if mock_mode == 1:
+        result.label = "Normal"
+        result.score = 5.0
+        result.pct_critical = 0.0
+        result.pct_at_risk = 0.0
+        result.pct_monitor = 0.0
+        result.pct_normal = 100.0
+    elif mock_mode == 0:
+        result.label = "Critical"
+        result.score = 100.0
+        result.pct_critical = 100.0
+        result.pct_at_risk = 0.0
+        result.pct_monitor = 0.0
+        result.pct_normal = 0.0
+
     risk = {
         "score": float(result.score),
         "label": result.label,

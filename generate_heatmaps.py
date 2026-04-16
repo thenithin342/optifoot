@@ -18,6 +18,7 @@ def run_heatmaps(
     *,
     out_dir: Path | None = None,
     print_report: bool = True,
+    mock_mode: int | None = None,
 ) -> dict[str, Path]:
     """Write spo2_heatmap_pure, spo2_heatmap_zones, comparison_strip under out_dir."""
     out = out_dir or CAPTURES_DIR
@@ -34,6 +35,17 @@ def run_heatmaps(
     p650p, p850p = align_images(p650p, p850p)
     mask = create_foot_mask(p650p)
     spo2_map = calculate_spo2_map(p650p, p850p, mask)
+
+    if mock_mode in (0, 1):
+        pair_id = p650.name.replace("_650nm.png", "")
+        pair_num = int("".join(filter(str.isdigit, pair_id)) or "42")
+        rng = np.random.default_rng(pair_num)
+        foot_mask = (mask > 0)
+        n_pixels = np.count_nonzero(foot_mask)
+        if mock_mode == 1:
+            spo2_map[foot_mask] = rng.uniform(86.0, 96.0, size=n_pixels)
+        elif mock_mode == 0:
+            spo2_map[foot_mask] = rng.uniform(2.0, 8.0, size=n_pixels)
 
     heatmap_pure = generate_heatmap(spo2_map)
     heatmap_pure_bar = add_colorbar(heatmap_pure)

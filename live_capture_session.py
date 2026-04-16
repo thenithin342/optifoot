@@ -77,9 +77,22 @@ def main() -> None:
     print(f"\nDownloading new capture ->\n  {session}")
     pair = download_capture_basenames(b650, b850, local_dir=session)
 
+    print("\n" + "="*50)
+    print("SpO2 Calculation Mode:")
+    print("  [1] No risk (86-96% SpO2)")
+    print("  [0] High risk (2-8% SpO2)")
+    print("  [Enter] Normal calculation")
+    choice = input("Select mode (1/0) or press Enter to skip: ").strip()
+    mock_mode = None
+    if choice == "1":
+        mock_mode = 1
+    elif choice == "0":
+        mock_mode = 0
+    print("="*50 + "\n")
+
     print("Computing SpO2 map, risk score, and heatmaps...")
-    analysis = analyze_pair(pair, out_dir=session, print_report=False)
-    hm = run_heatmaps(pair, out_dir=session, print_report=False)
+    analysis = analyze_pair(pair, out_dir=session, print_report=False, mock_mode=mock_mode)
+    hm = run_heatmaps(pair, out_dir=session, print_report=False, mock_mode=mock_mode)
 
     report_path = session / "report.html"
     image_paths = {

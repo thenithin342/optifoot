@@ -73,7 +73,7 @@ footer {{ margin-top: 40px; padding-top: 16px; border-top: 1px solid #30363d; co
 <header>
   <h1>OptiFoot — tissue oxygenation report</h1>
   <p class="sub">Pair: {html.escape(analysis.get("pair_id", ""))} · Raw files: {f650n} &amp; {f850n}</p>
-  <span class="badge">Risk: {risk_label} ({float(r.get("score", 0)):.1f} / 100)</span>
+  <span class="badge">Risk: {risk_label} (Score: {float(r.get("score", 0)):.1f}/100 | Avg SpO₂: {float(sp.get("mean", 0)):.1f}%)</span>
 </header>
 
 <section class="grid2">
