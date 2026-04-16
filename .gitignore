@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.qodo/
+captures/
+scans/
+node_modules/
+*.docx
+*.pdf
+*.png
+.env
