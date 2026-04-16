@@ -114,7 +114,7 @@ def build_override_result(profile, largest_critical_area_px=0):
     )
 
 
-OUT = os.path.join(os.path.dirname(__file__), "optifoot", "demo_output")
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "optifoot", "demo_output")
 os.makedirs(OUT, exist_ok=True)
 
 

@@ -32,7 +32,9 @@ def calculate_spo2_map(
     img_850: np.ndarray,
     mask: np.ndarray,
 ) -> np.ndarray:
-    """Compute a per-pixel SpO₂ map from dual-wavelength images.
+    """Compute a per-pixel SpO₂ map from dual-wavelength images (v1 formula).
+
+    Uses modified Beer-Lambert law for reflectance oximetry.
 
     Parameters
     ----------
@@ -57,7 +59,7 @@ def calculate_spo2_map(
     with np.errstate(divide="ignore", invalid="ignore"):
         R = np.where(ln_850 > 0.01, ln_650 / ln_850, 1.0)
 
-    # Beer-Lambert SpO₂ formula
+    # Beer-Lambert SpO₂ formula (v1)
     numerator = _E_HHB_850 - R * _E_HHB_650
     denominator = (_E_HHB_850 - _E_HBO2_850) - R * (_E_HHB_650 - _E_HBO2_650)
 
@@ -79,10 +81,111 @@ def calculate_spo2_map(
     foot_vals = spo2[foot_mask]
     if foot_vals.size > 0:
         log.info(
-            "SpO₂ map — mean: %.1f%%  min: %.1f%%  max: %.1f%%",
+            "SpO₂ map (v1) — mean: %.1f%%  min: %.1f%%  max: %.1f%%",
             foot_vals.mean(), foot_vals.min(), foot_vals.max(),
         )
     else:
         log.warning("SpO₂ map — no foot pixels found in mask")
 
     return spo2
+
+
+def calculate_spo2_map_v2(
+    img_650: np.ndarray,
+    img_850: np.ndarray,
+    mask: np.ndarray,
+) -> np.ndarray:
+    """Compute a per-pixel SpO₂ map using corrected Beer-Lambert formula (v2).
+
+    Corrected derivation for dual-wavelength reflectance oximetry:
+        R = ln(I_650) / ln(I_850)
+        SpO₂ = (ε_HHb_850 - R·ε_HHb_650) / ((ε_HHb_650 - ε_HbO2_650)·R - (ε_HbO2_850 - ε_HHb_850)) × 100
+
+    This formula correctly handles the sign convention in the denominator.
+
+    Parameters
+    ----------
+    img_650 : uint8 grayscale image captured under 650 nm illumination
+    img_850 : uint8 grayscale image captured under 850 nm illumination
+    mask    : binary mask (255 = foot region, 0 = background)
+
+    Returns
+    -------
+    spo2_map : float64 array, same shape as inputs, values in [0, 100].
+               Background pixels are 0.
+    """
+    # Work in float; clamp minimum to 2 to avoid log(0)
+    i650 = np.clip(img_650.astype(np.float64), 2.0, 255.0)
+    i850 = np.clip(img_850.astype(np.float64), 2.0, 255.0)
+
+    # Optical-density ratio  R = ln(I_650) / ln(I_850)
+    ln_650 = np.log(i650)
+    ln_850 = np.log(i850)
+
+    # Avoid division by zero where 850 nm is very dark
+    with np.errstate(divide="ignore", invalid="ignore"):
+        R = np.where(ln_850 > 0.01, ln_650 / ln_850, 1.0)
+
+    # Corrected Beer-Lambert SpO₂ formula (v2)
+    # Denominator: (ε_HHb_650 - ε_HbO2_650)·R - (ε_HbO2_850 - ε_HHb_850)
+    numerator = _E_HHB_850 - R * _E_HHB_650
+    denominator = (_E_HHB_650 - _E_HBO2_650) * R - (_E_HBO2_850 - _E_HHB_850)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        spo2_v2 = np.where(
+            np.abs(denominator) > 1e-8,
+            (numerator / denominator) * 100.0,
+            0.0,
+        )
+
+    # Clamp to physiologically meaningful range
+    spo2_v2 = np.clip(spo2_v2, 0.0, 100.0)
+
+    # Zero out background
+    foot_mask = mask > 0
+    spo2_v2[~foot_mask] = 0.0
+
+    # Stats for logging
+    foot_vals = spo2_v2[foot_mask]
+    if foot_vals.size > 0:
+        log.info(
+            "SpO₂ map (v2) — mean: %.1f%%  min: %.1f%%  max: %.1f%%",
+            foot_vals.mean(), foot_vals.min(), foot_vals.max(),
+        )
+    else:
+        log.warning("SpO₂ map (v2) — no foot pixels found in mask")
+
+    return spo2_v2
+
+
+def calculate_r_ratio(
+    img_650: np.ndarray,
+    img_850: np.ndarray,
+    mask: np.ndarray,
+) -> np.ndarray:
+    """Compute the R-ratio (optical density ratio) map.
+
+    R = ln(I_650) / ln(I_850)
+
+    This intermediate value is used in Beer-Lambert SpO₂ calculation.
+    Higher R indicates more deoxygenated hemoglobin absorption.
+
+    Returns
+    -------
+    r_map : float64 array, same shape as inputs.
+            Background pixels are 0.
+    """
+    i650 = np.clip(img_650.astype(np.float64), 2.0, 255.0)
+    i850 = np.clip(img_850.astype(np.float64), 2.0, 255.0)
+
+    ln_650 = np.log(i650)
+    ln_850 = np.log(i850)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        R = np.where(ln_850 > 0.01, ln_650 / ln_850, 1.0)
+
+    # Zero out background
+    foot_mask = mask > 0
+    R[~foot_mask] = 0.0
+
+    return R
