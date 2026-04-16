@@ -20,10 +20,13 @@ import os
 import webbrowser
 from datetime import datetime
 from pathlib import Path
+import sys
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 
-from analyze_capture import analyze_pair
-from generate_heatmaps import run_heatmaps
-from pi_sync import (
+from optifoot.orchestration.analyze_capture import analyze_pair
+from optifoot.orchestration.generate_heatmaps import run_heatmaps
+from optifoot.orchestration.pi_sync import (
     download_capture_basenames,
     list_remote_capture_basenames,
     restart_remote_capture_web,
@@ -32,8 +35,8 @@ from pi_sync import (
     wait_for_http_ready,
     wait_for_new_capture_pair,
 )
-from project_paths import REPO_ROOT
-from scan_report_html import write_scan_report
+from optifoot.paths import REPO_ROOT
+from optifoot.orchestration.scan_report_html import write_scan_report
 
 
 def main() -> None:

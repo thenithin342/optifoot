@@ -18,7 +18,7 @@ import random
 import logging
 
 # Demo mode must be set BEFORE importing pipeline
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from optifoot import config
 config.DEMO_MODE = True
 

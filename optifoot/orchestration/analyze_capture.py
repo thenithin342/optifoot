@@ -1,9 +1,7 @@
 import sys
 from pathlib import Path
 from typing import Any
-
-from project_paths import CAPTURES_DIR, REPO_ROOT, find_latest_capture_pair
-
+from optifoot.paths import CAPTURES_DIR, REPO_ROOT, find_latest_capture_pair
 sys.path.insert(0, str(REPO_ROOT))
 
 import cv2

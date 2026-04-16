@@ -41,30 +41,34 @@ def main():
         "8. ONE-LINER SUMMARY\nOptiFoot uses dual-wavelength near-infrared imaging to calculate per-pixel tissue oxygenation via the Beer-Lambert law, producing a real-time SpO₂ heatmap and risk score that detects diabetic foot complications before ulcers form — all on a ₹11,545 Raspberry Pi device."
     ]
 
-    image_dir = "optifoot/demo_output"
+    REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    image_dir = os.path.join(REPO_ROOT, "optifoot", "demo_output")
+    docs_dir = os.path.join(REPO_ROOT, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+    
     image_order = [
-        "03_dual_wavelength_comparison.png",
-        "06_heatmap_with_colorbar.png",
-        "05_heatmap_risk_zones.png",
-        "07_risk_score_panel.png",
-        "09_temporal_comparison_strip.png",
-        "10_architecture_diagram.png"
+         "03_dual_wavelength_comparison.png",
+         "06_heatmap_with_colorbar.png",
+         "05_heatmap_risk_zones.png",
+         "07_risk_score_panel.png",
+         "09_temporal_comparison_strip.png",
+         "10_architecture_diagram.png"
     ]
     captions = [
-        "03_dual_wavelength_comparison.png — These are the two raw captures. Left is 650nm, right is 850nm. Notice the intensity differences — that's what encodes oxygenation.",
-        "06_heatmap_with_colorbar.png — After Beer-Lambert processing, here's the SpO₂ map. Blue regions have healthy oxygen levels. Red regions are hypoxic — potential ulcer formation sites.",
-        "05_heatmap_risk_zones.png — We automatically delineate critical zones with contours. A clinician can see exactly where intervention is needed.",
-        "07_risk_score_panel.png — The composite risk score with all metrics. This is what the clinician sees — one number plus supporting data.",
-        "09_temporal_comparison_strip.png — Over multiple visits, we track changes. This shows baseline vs follow-up with a difference map.",
-        "10_architecture_diagram.png — The software architecture — modular pipeline from LED control through to GUI and database."
+         "03_dual_wavelength_comparison.png — These are the two raw captures. Left is 650nm, right is 850nm. Notice the intensity differences — that's what encodes oxygenation.",
+         "06_heatmap_with_colorbar.png — After Beer-Lambert processing, here's the SpO₂ map. Blue regions have healthy oxygen levels. Red regions are hypoxic — potential ulcer formation sites.",
+         "05_heatmap_risk_zones.png — We automatically delineate critical zones with contours. A clinician can see exactly where intervention is needed.",
+         "07_risk_score_panel.png — The composite risk score with all metrics. This is what the clinician sees — one number plus supporting data.",
+         "09_temporal_comparison_strip.png — Over multiple visits, we track changes. This shows baseline vs follow-up with a difference map.",
+         "10_architecture_diagram.png — The software architecture — modular pipeline from LED control through to GUI and database."
     ]
-
+    
     # Create Word document
     doc = Document()
     for section in doc_text:
-        doc.add_paragraph(section)
+         doc.add_paragraph(section)
     add_images_to_docx(doc, image_dir, image_order, captions)
-    doc.save("OptiFoot_Expert_Breakdown.docx")
+    doc.save(os.path.join(docs_dir, "OptiFoot_Expert_Breakdown.docx"))
 
     # Create PDF document
     pdf = FPDF()
@@ -88,7 +92,7 @@ def main():
     for section in doc_text:
         pdf.multi_cell(0, 10, sanitize(section))
     add_images_to_pdf(pdf, image_dir, image_order, [sanitize(c) for c in captions])
-    pdf.output("OptiFoot_Expert_Breakdown.pdf")
+    pdf.output(os.path.join(docs_dir, "OptiFoot_Expert_Breakdown.pdf"))
 
 if __name__ == "__main__":
     main()

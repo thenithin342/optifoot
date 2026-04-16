@@ -18,7 +18,9 @@ from pathlib import Path
 
 import paramiko
 
-from project_paths import REPO_ROOT, CAPTURES_DIR
+from optifoot.paths import REPO_ROOT, CAPTURES_DIR
+
+PI_SRC_DIR = REPO_ROOT / "pi_src"
 
 REMOTE_CAPTURES = "/home/pi/New folder/captures"
 REMOTE_CAPTURE_SCRIPT = "/home/pi/New folder/capture_two_images.py"
@@ -116,7 +118,7 @@ def download_captures(local_dir: Path | None = None) -> list[Path]:
 
 def upload_capture_script(local_script: Path | None = None) -> None:
     """Push capture_two_images.py from this repo to the Pi."""
-    src = local_script or (REPO_ROOT / "capture_two_images.py")
+    src = local_script or (PI_SRC_DIR / "capture_two_images.py")
     if not src.is_file():
         raise FileNotFoundError(src)
 
@@ -134,7 +136,7 @@ def upload_capture_script(local_script: Path | None = None) -> None:
 
 def upload_web_interface_script(local_script: Path | None = None) -> None:
     """Push capture_web_interface.py (browser UI) to the Pi."""
-    src = local_script or (REPO_ROOT / "capture_web_interface.py")
+    src = local_script or (PI_SRC_DIR / "capture_web_interface.py")
     if not src.is_file():
         raise FileNotFoundError(src)
 
@@ -148,7 +150,7 @@ def upload_web_interface_script(local_script: Path | None = None) -> None:
 
 def upload_capture_hardware(local_script: Path | None = None) -> None:
     """Push capture_hardware.py (no GUI deps; required by capture_web_interface)."""
-    src = local_script or (REPO_ROOT / "capture_hardware.py")
+    src = local_script or (PI_SRC_DIR / "capture_hardware.py")
     if not src.is_file():
         raise FileNotFoundError(src)
     ssh = _connect()
@@ -324,8 +326,8 @@ def run_remote_auto_capture(
     try:
         if upload_script:
             sftp = ssh.open_sftp()
-            sftp.put(str(REPO_ROOT / "capture_hardware.py"), REMOTE_HARDWARE_SCRIPT)
-            sftp.put(str(REPO_ROOT / "capture_two_images.py"), REMOTE_CAPTURE_SCRIPT)
+            sftp.put(str(PI_SRC_DIR / "capture_hardware.py"), REMOTE_HARDWARE_SCRIPT)
+            sftp.put(str(PI_SRC_DIR / "capture_two_images.py"), REMOTE_CAPTURE_SCRIPT)
             sftp.close()
 
         cmd = 'cd "/home/pi/New folder" && python3 capture_two_images.py --auto 2>&1'
