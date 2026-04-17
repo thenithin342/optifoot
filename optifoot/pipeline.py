@@ -25,14 +25,14 @@ log = logging.getLogger(__name__)
 # -- Demo override profiles --------------------------------------------------
 _OVERRIDE_PROFILES = {
     "1": {
-        "score": 5.0, "label": "Normal",
+        "score_range": (5.0, 10.0), "label": "Normal",
         "mean_spo2": 97.2, "min_spo2": 95.0,
         "pct_critical": 0.0, "pct_at_risk": 0.0,
         "pct_monitor": 2.8, "pct_normal": 97.2,
         "spo2_range": (93.0, 98.0),
     },
     "0": {
-        "score": 82.0, "label": "Critical",
+        "score_range": (85.0, 100.0), "label": "Critical",
         "mean_spo2": 3.0, "min_spo2": 1.0,
         "pct_critical": 78.0, "pct_at_risk": 15.0,
         "pct_monitor": 5.0, "pct_normal": 2.0,
@@ -116,8 +116,9 @@ class Pipeline:
             heatmap_zones = overlay_risk_zones(heatmap_base, spo2_map)
             self.last_heatmap = add_colorbar(heatmap_zones)
             # Override the result
+            dynamic_score = float(np.random.uniform(profile["score_range"][0], profile["score_range"][1]))
             result = RiskResult(
-                score=profile["score"], label=profile["label"],
+                score=dynamic_score, label=profile["label"],
                 mean_spo2=profile["mean_spo2"], min_spo2=profile["min_spo2"],
                 pct_critical=profile["pct_critical"], pct_at_risk=profile["pct_at_risk"],
                 pct_monitor=profile["pct_monitor"], pct_normal=profile["pct_normal"],

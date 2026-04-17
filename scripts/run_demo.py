@@ -37,7 +37,7 @@ log = logging.getLogger("demo")
 
 OVERRIDE_PROFILES = {
     "1": {
-        "score": 5.0,
+        "score_range": (5.0, 10.0),
         "label": "Normal",
         "mean_spo2": 97.2,
         "min_spo2": 95.0,
@@ -46,11 +46,11 @@ OVERRIDE_PROFILES = {
         "pct_monitor": 2.8,
         "pct_normal": 97.2,
         "risk_display": "No Risk",
-        "blood_flow": f"{random.uniform(91.0, 98.5):.1f}%",
+        "blood_flow_range": (91.0, 98.5),
         "spo2_range": (93.0, 98.0),   # foot pixels will be set to this range
     },
     "0": {
-        "score": 82.0,
+        "score_range": (85.0, 100.0),
         "label": "Critical",
         "mean_spo2": 3.0,
         "min_spo2": 1.0,
@@ -59,7 +59,7 @@ OVERRIDE_PROFILES = {
         "pct_monitor": 5.0,
         "pct_normal": 2.0,
         "risk_display": "Risk Present",
-        "blood_flow": f"{random.uniform(1.0, 4.9):.1f}%",
+        "blood_flow_range": (1.0, 4.9),
         "spo2_range": (1.0, 5.0),     # foot pixels will be set to this range
     },
 }
@@ -70,13 +70,13 @@ def ask_demo_choice():
     print("\n" + "=" * 50)
     print("  OPTIFOOT DEMO MODE")
     print("  Choose output mode before pipeline starts:")
-    print(f"    1  ->  No Risk      (Blood flow {OVERRIDE_PROFILES['1']['blood_flow']})")
-    print(f"    0  ->  Risk Present (Blood flow {OVERRIDE_PROFILES['0']['blood_flow']})")
+    print(f"    1  ->  No Risk      (Blood flow mapped dynamically)")
+    print(f"    0  ->  Risk Present (Blood flow mapped dynamically)")
     print("=" * 50)
     key = input("  Enter 1 or 0: ").strip()
     if key in OVERRIDE_PROFILES:
         profile = OVERRIDE_PROFILES[key]
-        log.info("Demo mode selected: %s (%s)", profile["risk_display"], profile["blood_flow"])
+        log.info("Demo mode selected: %s", profile["risk_display"])
         return key
     # Default to '1' if invalid input
     log.info("Invalid input '%s', defaulting to mode 1 (No Risk)", key)
@@ -98,8 +98,10 @@ def override_spo2_map(spo2_map, profile):
 
 def build_override_result(profile, largest_critical_area_px=0):
     """Build a RiskResult from the demo profile."""
+    dynamic_score = float(random.uniform(profile["score_range"][0], profile["score_range"][1]))
+    dynamic_blood_flow = f'{random.uniform(profile["blood_flow_range"][0], profile["blood_flow_range"][1]):.1f}%'
     return RiskResult(
-        score=profile["score"],
+        score=dynamic_score,
         label=profile["label"],
         mean_spo2=profile["mean_spo2"],
         min_spo2=profile["min_spo2"],
@@ -110,7 +112,7 @@ def build_override_result(profile, largest_critical_area_px=0):
         largest_critical_area_px=largest_critical_area_px,
         metrics={"demo_override": True,
                  "risk_display": profile["risk_display"],
-                 "blood_flow": profile["blood_flow"]},
+                 "blood_flow": dynamic_blood_flow},
     )
 
 
@@ -160,7 +162,7 @@ def main():
     spo2_map = pipeline.last_spo2_map
     spo2_map = override_spo2_map(spo2_map, profile)
     result = build_override_result(profile, result.largest_critical_area_px)
-    log.info("  Override applied: %s (Blood flow %s)", profile["risk_display"], profile["blood_flow"])
+    log.info("  Override applied: %s (Blood flow %s)", profile["risk_display"], result.metrics["blood_flow"])
 
     # Save SpO2 heatmap variants (generated from OVERRIDDEN spo2 map)
     heatmap_base = generate_heatmap(spo2_map)
@@ -191,7 +193,7 @@ def main():
     }
     badge_color = label_colors.get(result.label, (117, 117, 117))
     cv2.rectangle(panel, (40, 90), (260, 210), badge_color, -1)
-    cv2.putText(panel, f"{result.score:.0f}", (80, 175),
+    cv2.putText(panel, f"{result.score:.1f}", (80, 175),
                 cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 4, cv2.LINE_AA)
     cv2.putText(panel, result.label, (75, 240),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, badge_color, 2, cv2.LINE_AA)
@@ -341,7 +343,7 @@ def main():
 
     print(f"\n  Risk:        {risk_display}")
     print(f"  Blood Flow:  {blood_flow}")
-    print(f"  Risk Score:  {result.score:.0f}/100  [{result.label}]")
+    print(f"  Risk Score:  {result.score:.1f}/100  [{result.label}]")
     print(f"  Mean SpO2:   {result.mean_spo2:.1f}%")
     if is_overridden:
         print(f"  *** DEMO OVERRIDE ACTIVE ***")

@@ -152,7 +152,7 @@ class ResultsTab(QWidget):
         self._view.fitInView(self._scene.sceneRect(), Qt.KeepAspectRatio)
 
     def _show_risk(self, r: RiskResult):
-        self._score_label.setText(f"{r.score:.0f}")
+        self._score_label.setText(f"{r.score:.1f}")
         colour = _LABEL_COLOURS.get(r.label, "#757575")
         self._score_label.setStyleSheet(f"color: {colour};")
 
